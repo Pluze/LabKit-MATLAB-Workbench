@@ -9,11 +9,11 @@ summary: Turn visible MATLAB graphics into an editable scientific figure while p
 
 Figure Studio turns visible MATLAB graphics into an editable scientific-figure document. It preserves the plotted values while letting the user revise layout, axes, tick text, semantic graphic categories, individual objects, annotations, and publication output from one shared document model. It does not rerun or change the calculation that produced the source plot.
 
-The left pane groups the workflow under **Source figure**, **Axes & color**, **Annotations**, **Text & lines**, **Legend**, **Layout**, **Check & export**. Choose **Preview**, **Legend** beside the App title to switch views.
+Start in **Source figure**. Use **Axes & color** to set scales and colors, **Annotations** to edit plot objects, and **Text & lines** to style them. Arrange panels in **Layout**. Review the **Preview** and **Legend** views before opening **Check & export**.
 
 ## Open Figure Studio
 
-From the launcher, select **Figure Studio** and choose **Open**. From a source checkout, run:
+From the launcher, select **Figure Studio** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_FigureStudio_app
@@ -72,11 +72,11 @@ Preflight reports **ready**, **review**, or **blocked** and supplies a suggested
 
 ## Exports And Editable Package
 
-The **Figure** tab provides **Open figure**, which opens a detached editable MATLAB figure containing every panel and the current legend names, order and inclusion. Open it again after further edits to obtain a new current copy; existing output windows remain independent and survive closing Studio. Use this command for a complete Studio figure; the framework axes context-menu popout is a single-axis copy and does not retain custom legend order.
+The **Source figure** page provides **Open figure**, which opens a detached editable MATLAB figure containing every panel and the current legend names, order and inclusion. Open it again after further edits to obtain a new current copy; existing output windows remain independent and survive closing Studio. Use this command for a complete Studio figure; the framework axes context-menu popout is a single-axis copy and does not retain custom legend order.
 
-The **Figure** tab provides **Copy figure**, which copies the complete styled document, including every panel, to the clipboard as one raster image at the configured export scale. It uses the same publication preflight and layout as file export; blocking issues must be resolved first. Copying does not change file-export destinations or result records.
+The **Source figure** page provides **Copy figure**, which copies the complete styled document, including every panel, to the clipboard as one raster image at the configured export scale. It uses the same publication preflight and layout as file export; blocking issues must be resolved first. Copying does not change file-export destinations or result records.
 
-The **Figure** tab also provides editable FIG, PNG, JPG, and SVG output. **Export editable package** writes:
+The **Source figure** page also provides editable FIG, PNG, JPG, and SVG output. Under **Check & export**, choose **Export editable package** to write:
 
 - `figure_studio_project.mat`, containing the semantic document, style, and preflight report;
 - `figure_document.json` and `preflight.json` for language-neutral inspection;

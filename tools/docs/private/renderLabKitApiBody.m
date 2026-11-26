@@ -258,8 +258,7 @@ function html = renderApiText(text, api, item, outputPath)
             if isempty(first)
                 break;
             end
-            target = "reference/api/" + replace(symbol, ".", "/") + ...
-                ".html";
+            target = apiOutputPath(symbol);
             replacementCount = replacementCount + 1;
             replacements(replacementCount, 1) = ...
                 "<a class=""api-inline-link"" href=""" + ...
@@ -286,7 +285,7 @@ function html = renderRelatedApis(api, item, outputPath)
     end
     rows = strings(numel(related), 1);
     for k = 1:numel(related)
-        target = "reference/api/" + replace(related(k).symbol, ".", "/") + ".html";
+        target = apiOutputPath(related(k).symbol);
         rows(k) = "<li><a href=""" + relativeWebPath(outputPath, target) + ...
             """><code>" + escapeLabKitHtml(related(k).symbol) + "</code></a> — " + ...
             escapeLabKitHtml(cleanSummary(related(k).summary)) + "</li>";

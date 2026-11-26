@@ -24,7 +24,7 @@ function centerXY = clampCropCenterToCanvas(geometry, centerXY, cropSize)
 end
 
 function canvasXY = nearestValidCanvasCenter(geometry, canvasXY, cropSize)
-    scale = geometryScale(geometry);
+    scale = batch_crop.cropGeometry.geometryScale(geometry);
     cropWidth = max(1, round(double(cropSize(1)) * scale));
     cropHeight = max(1, round(double(cropSize(2)) * scale));
     mask = currentMask(geometry);
@@ -89,14 +89,6 @@ function [row, col, found] = nearestTrue(tf, targetRow, targetCol)
             return;
         end
         radius = min(maxRadius + 1, radius * 2);
-    end
-end
-
-function scale = geometryScale(geometry)
-    scale = 1;
-    if isfield(geometry, 'coordinateScale') && isfinite(double(geometry.coordinateScale)) && ...
-            double(geometry.coordinateScale) > 0
-        scale = double(geometry.coordinateScale);
     end
 end
 

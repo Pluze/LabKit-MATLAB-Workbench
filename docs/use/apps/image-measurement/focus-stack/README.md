@@ -9,9 +9,7 @@ summary: Focus Stack fuses at least two focal planes into one all-in-focus image
 
 Focus Stack fuses at least two focal planes into one all-in-focus image using multilevel Laplacian focus evidence and exports a focus-depth index map.
 
-The preview is derived directly from the selected focal plane and current stack result; changing selection does not retain an independent preview copy.
-
-The left pane groups the workflow under **Stack & fusion**, **Results & export**. Use **Run focus stack** in the header when ready.
+Load images of the same field at different focus distances in **Stack & fusion**, then choose **Run focus stack**. Inspect the fused image and save the outputs in **Results & export**.
 
 ## Requirements And Launch
 

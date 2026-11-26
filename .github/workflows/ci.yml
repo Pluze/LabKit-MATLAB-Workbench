@@ -19,6 +19,8 @@ jobs:
   policy:
     name: Repository policy
     runs-on: ubuntu-latest
+    outputs:
+      scope: ${{ steps.selection.outputs.scope }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -52,10 +54,79 @@ jobs:
             --base-sha "${BASE_SHA}" \
             --head-sha "${HEAD_SHA}"
 
+      - name: Select required PR validation
+        id: selection
+        if: github.event_name == 'pull_request'
+        run: |
+          scope="$(python .github/scripts/pr_scope.py)"
+          echo "scope=${scope}" >> "${GITHUB_OUTPUT}"
+          echo "PR validation scope: ${scope}" >> "${GITHUB_STEP_SUMMARY}"
+
+  affected-apps:
+    name: Affected App tests / ${{ matrix.os }} / ${{ matrix.release }}
+    needs: policy
+    if: needs.policy.outputs.scope == 'apps'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            release: R2022b
+          - os: windows-latest
+            release: latest
+          - os: macos-15
+            release: latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+      - name: Collect affected App paths
+        shell: bash
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          mkdir -p artifacts/logs/affected-apps
+          python .github/scripts/pr_scope.py --app-paths > artifacts/app-paths.txt
+      - uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ matrix.release }}
+      - name: Start Linux virtual display
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp > "${RUNNER_TEMP}/xvfb.log" 2>&1 &
+          echo "DISPLAY=:99" >> "${GITHUB_ENV}"
+      - name: Run affected tests
+        id: affected
+        uses: matlab-actions/run-command@v3
+        with:
+          command: addpath(fullfile(pwd,'.github','scripts')); runDevelopmentFeedback(fullfile(pwd,'artifacts','app-paths.txt'),"affected-apps")
+          startup-options: -logfile artifacts/logs/affected-apps/matlab.log
+      - name: Summarize affected tests
+        if: always()
+        shell: bash
+        run: |
+          python .github/scripts/summarize_junit.py \
+            --platform "${{ runner.os }}" --release "${{ matrix.release }}" --runner "${{ matrix.os }}" \
+            --shard "Affected App tests" --profiles affected-apps \
+            --claim "Changed App paths and their catalog dependencies" \
+            --artifact-name "affected-apps-${{ matrix.os }}" --affected-outcome "${{ steps.affected.outcome }}"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: affected-apps-${{ matrix.os }}
+          path: |
+            artifacts/app-paths.txt
+            artifacts/logs/**
+            artifacts/test-results/affected-apps/**
+          retention-days: 14
+
   platform-matrix:
     name: MATLAB / ${{ matrix.label }} / ${{ matrix.release }} / ${{ matrix.shard }}
     needs: policy
-    if: github.event_name != 'push'
+    if: needs.policy.outputs.scope == 'full'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 100
     strategy:
@@ -235,7 +306,7 @@ jobs:
   docs-check:
     name: Documentation check
     needs: policy
-    if: github.event_name != 'push'
+    if: contains(fromJSON('["docs","apps","full"]'), needs.policy.outputs.scope)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -258,6 +329,7 @@ jobs:
     if: always()
     needs:
       - policy
+      - affected-apps
       - platform-matrix
       - docs-check
     runs-on: ubuntu-latest
@@ -266,7 +338,12 @@ jobs:
         shell: bash
         run: |
           test '${{ needs.policy.result }}' = 'success'
-          if [ '${{ github.event_name }}' != 'push' ]; then
-            test '${{ needs.platform-matrix.result }}' = 'success'
-            test '${{ needs.docs-check.result }}' = 'success'
-          fi
+          scope='${{ needs.policy.outputs.scope }}'
+          case '${{ github.event_name }}'/"${scope}" in
+            push/|pull_request/policy) ;;
+            pull_request/docs|pull_request/apps|pull_request/full)
+              test '${{ needs.docs-check.result }}' = 'success'
+              if [ "${scope}" = apps ]; then test '${{ needs.affected-apps.result }}' = success; fi
+              if [ "${scope}" = full ]; then test '${{ needs.platform-matrix.result }}' = success; fi ;;
+            *) exit 1 ;;
+          esac

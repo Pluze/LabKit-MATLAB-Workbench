@@ -19,6 +19,12 @@ help/manual, labels, and relevant tests; for a facade contract, inspect the
 changed public help, consumers, owning guide, and generated discovery. Expand
 that inspection only when shared discovery or a broader contract changes.
 
+For user guides, name the control the reader will see, the action to take,
+and the result to look for. Use the current UI label and keep units and
+scientific qualifiers that affect interpretation. Remove phrases that only
+describe how the documentation is organized when they do not help readers
+choose their next step.
+
 Write at the current fact owner. For moves or retirement, update live links and
 catalog ownership and remove obsolete routes. For new public surfaces, verify
 the reader can reach the help from the owning catalog and return to the guide.

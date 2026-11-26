@@ -9,7 +9,7 @@ summary: Define an ordered landmark skeleton, record or predict coordinates acro
 
 Video Marker defines an ordered landmark skeleton, records coordinates across video frames, predicts forward positions between manual anchors, and saves an explicit App-owned MAT snapshot when requested.
 
-The left pane groups the workflow under **Skeleton & scale**, **Track frames**, **Review & predict**, **Import & export**. Use **Save MAT** in the header when ready.
+Define the landmarks in **Skeleton & scale**, then mark their positions in **Track frames**. Check predicted points in **Review & predict**. Use **Save MAT** to resume later, or open **Import & export** for coordinate files.
 
 ## Requirements And Launch
 

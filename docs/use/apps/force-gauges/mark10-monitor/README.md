@@ -9,11 +9,9 @@ summary: Monitor and replay ESM303 force and travel data, then calculate enginee
 
 Mark-10 Monitor connects to an ESM303 with an attached Series 5 gauge, displays and retains live force and travel without controlling stand motion, replays previously exported data, and calculates engineering stress–strain curves and strain-window moduli.
 
-The central workspace follows the official monitoring workflow with separate **Live Plots**, **Recent Data**, **Recording Review**, **Modulus Analysis**, and **Diagnostics** pages. The upper plot shows measured travel and, when available, linear reconstructed travel on its left axis and force on the right. The lower plot shows the same force samples against each travel series. The table shows the latest 200 valid visible samples while the full monitoring run remains in the managed buffer.
+On **Live Plots**, the upper plot shows travel on the left axis and force on the right. The lower plot shows force against measured travel and, when available, reconstructed travel. **Recent Data** shows the latest 200 valid visible samples. The recording keeps the full run. Choose **Recording Review** to set the analysis interval, **Modulus Analysis** to inspect the fits, or **Diagnostics** to review the initial-length estimate.
 
-Connection, settings, read-once, playback, and monitoring controls call their owned workflow directly, while retained samples remain the single source for plots and export.
-
-The left pane groups the workflow under **Monitor**, **Review recording**, **Set reference**, **Fit & export**, **Settings**. Choose **Live Plots**, **Recent Data**, **Recording Review**, **Modulus Analysis**, **Diagnostics** in the view selector beside the App title. Use **Export CSV + LOG + MAT** in the header when ready.
+Use **Monitor** for live readings and **Settings** for gauge settings. To analyze a recording, start in **Review recording**, apply the zero offsets in **Set reference**, then open **Fit & export**. Choose **Export CSV + LOG + MAT** to save the recording.
 
 ## Connect, Monitor, And Export
 
@@ -66,8 +64,8 @@ Start in **Review recording**, apply offsets in **Set reference**, then continue
 1. Load data, choose **Tension**, **Compression**, or **Cyclic**, and set the analysis start/end times in seconds. Times are original recording times. **Use Full Time Range** restores the source bounds. The **Recording Review** page puts start/end time controls above the force/time and gap/time plots, which mark the selected interval.
 2. Review force zero and the closed-fixture travel reference. Optionally detect and exclude isolated glitches.
 3. Enter one approximate contact time; estimate initial length automatically or enter a measured value, review the cross-section, and confirm dimensions. Choose **Update Stress-Strain** to prepare the curve.
-4. Add and edit strain windows in the Analysis sidebar, then choose **Calculate Window Moduli**. The **Modulus Analysis** workspace keeps the stress–strain plot at full width, with its result table underneath. Inspect all enabled windows and their colored fits together. Selecting a result emphasizes that fit. **Reset X/Y** restores the stress–strain view without recalculating or invalidating fitted results. Choose **Open Analysis Diagnostics** for a synchronized separate window.
-5. Use **Export Stress-Strain CSV** at the bottom of the Analysis tab to save the prepared curve. Window fitting is not required for this export.
+4. Add and edit strain windows under **Fit & export**, then choose **Calculate Window Moduli**. The **Modulus Analysis** workspace keeps the stress–strain plot at full width, with its result table underneath. Inspect all enabled windows and their colored fits together. Selecting a result emphasizes that fit. **Reset X/Y** restores the stress–strain view without recalculating or invalidating fitted results. Choose **Open Analysis Diagnostics** for a synchronized separate window.
+5. Use **Export Stress-Strain CSV** under **Fit & export** to save the prepared curve. Window fitting is not required for this export.
 
 Changing a strain window clears only fitted results. Changing the analysis time interval clears the curve and fits while retaining the reviewed initial length and contact estimate. Changing the test type, applied zero, glitch exclusion, or approximate contact time clears the estimate and geometry confirmation. Editing specimen dimensions clears confirmation and the curve. These changes require the relevant update/confirmation before another export; an open diagnostic window reflects the same state.
 

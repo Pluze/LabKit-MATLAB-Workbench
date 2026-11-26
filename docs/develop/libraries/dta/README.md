@@ -165,12 +165,6 @@ The reader treats DTA files as tab-delimited text. It scans metadata and named T
 
 `detectType` and `loadFile` return readable status messages for missing files, unsupported content, parse failures, and expected-kind mismatches. Invalid argument types and invalid expected-kind strings throw documented LabKit errors.
 
-## Reference Contract
-
-Open an individual DTA function page for exact accepted kinds, path forms, status fields, thrown errors, and related loaders or accessors. Public help is checked against implemented options and its executable examples are run in a clean MATLAB test process.
-
-Self-contained public-help `Example:` blocks run in `docsCheck`. File- or device-dependent `Typical Call:` sketches require the indicated external input and are not executed by that check.
-
 ## Related Topics
 
 - [CIC](../../../use/apps/electrochemistry/cic/README.md), [CSC](../../../use/apps/electrochemistry/csc/README.md), and [EIS](../../../use/apps/electrochemistry/eis/README.md) use DTA records in interactive workflows.

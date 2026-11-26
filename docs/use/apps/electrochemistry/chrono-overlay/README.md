@@ -9,9 +9,7 @@ summary: Chrono Overlay compares voltage and current transients from multiple Ga
 
 Chrono Overlay compares voltage and current transients from multiple Gamry DTA files on a common pulse-centered time axis and exports the aligned curves.
 
-Use **Export curves CSV** in the header when ready.
-
-The left pane groups the workflow under **Overlay recordings**.
+Add the DTA files you want to compare under **Overlay recordings**. Once you have checked the traces, choose **Export curves CSV**.
 
 ## Requirements And Launch
 

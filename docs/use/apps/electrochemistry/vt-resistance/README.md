@@ -9,9 +9,9 @@ summary: VT Resistance estimates cathodic and anodic steady resistance from a bi
 
 VT Resistance estimates cathodic and anodic steady resistance from a biphasic voltage transient and reports the mean of their absolute values.
 
-CSV export writes the current resistance result table with its declared column names and units; it does not maintain a separate export-only result model.
+The CSV uses the same column names and units as the resistance table.
 
-The left pane groups the workflow under **Transient analysis**, **Plot settings**, **Resistance results**. Use **Export results CSV** in the header when ready.
+Choose the pulse settings in **Transient analysis** and inspect the traces in **Plot settings**. Review the per-file values in **Resistance results**, then choose **Export results CSV**.
 
 ## Requirements And Launch
 

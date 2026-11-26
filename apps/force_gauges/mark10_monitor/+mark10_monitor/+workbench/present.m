@@ -39,16 +39,16 @@ view = view.value("analysisSurfaceTime",s.analysis.travelDraft.contact_s);
 view = view.enabled("analysisSurfaceTime",~monitoring && s.experiment.type=="Compression");
 view = view.text("travelContactSuggestion",s.analysis.contactSuggestion);
 view = view.enabled("suggestTravelContact",analysisDataAvailable(s) && s.experiment.type=="Compression");
-view = view.value("gaugeUnit", displaySetting("unit", s.settingsDraft.unit));
-view = view.value("gaugeMode", displaySetting("mode", s.settingsDraft.mode));
+view = view.value("gaugeUnit", mark10_monitor.settings.displayChoice("unit", s.settingsDraft.unit));
+view = view.value("gaugeMode", mark10_monitor.settings.displayChoice("mode", s.settingsDraft.mode));
 view = view.value("currentFilter", ...
-    displaySetting("currentFilter", s.settingsDraft.currentFilter));
+    mark10_monitor.settings.displayChoice("currentFilter", s.settingsDraft.currentFilter));
 view = view.value("displayFilter", ...
-    displaySetting("displayFilter", s.settingsDraft.displayFilter));
+    mark10_monitor.settings.displayChoice("displayFilter", s.settingsDraft.displayFilter));
 view = view.value("outputFormat", ...
-    displaySetting("outputFormat", s.settingsDraft.outputFormat));
+    mark10_monitor.settings.displayChoice("outputFormat", s.settingsDraft.outputFormat));
 view = view.value("autoOutput", ...
-    displaySetting("autoOutput", s.settingsDraft.autoOutput));
+    mark10_monitor.settings.displayChoice("autoOutput", s.settingsDraft.autoOutput));
 view = view.text("connectionStatus", s.connection.status);
 readout = compose("Force: %s N\nTravel: %s mm", ...
     displayNumber(s.acquisition.force_N), ...
@@ -156,10 +156,6 @@ end
 
 function value = selectedPort(value, ports)
 if strlength(value) == 0, value = ports(1); end
-end
-
-function value = displaySetting(name, value)
-value = mark10_monitor.settings.displayChoice(name, value);
 end
 
 function text = displayNumber(value)

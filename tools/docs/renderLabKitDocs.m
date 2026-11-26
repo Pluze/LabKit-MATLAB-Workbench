@@ -113,7 +113,7 @@ function output = renderPublicApiPages(model, stagingRoot)
     reportDocProgress("public API pages", 0, total);
     for k = 1:numel(model.api)
         item = model.api(k);
-        outputPath = "reference/api/" + replace(item.symbol, ".", "/") + ".html";
+        outputPath = apiOutputPath(item.symbol);
         body = renderLabKitApiBody(model, item, outputPath);
         page = struct("source", "", "output", outputPath, ...
             "components", apiComponents(model, item));

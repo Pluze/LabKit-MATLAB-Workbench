@@ -172,13 +172,6 @@ function analysis = emptyAnalysis(recordingId, filepath, protocol)
         "issues", emptyIssues());
 end
 
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end
-
 function roles = resolveRoles(info, protocol)
     roles = struct();
     channels = info.channelFamilies.amplifier;

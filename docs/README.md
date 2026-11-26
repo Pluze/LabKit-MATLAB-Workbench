@@ -4,10 +4,10 @@
 id: home
 type: landing
 audience: new-user
-summary: Find the shortest path to install LabKit, use an App, build an App, look up an exact contract, maintain the project, or understand why behavior changed.
+summary: Install LabKit, choose an App for your data, look up a MATLAB function, or find out what changed.
 ```
 
-LabKit is a MATLAB workbench of focused laboratory Apps. Choose the result you need; the documentation will lead from a supported task to exact reference or historical rationale only when you need it.
+LabKit includes MATLAB Apps for working with laboratory data. Start with [Use LabKit](use/README.md) to install the launcher, or go straight to the [App catalog](use/apps/README.md) to find a tool for your data.
 
 ## Choose By Goal
 
@@ -16,14 +16,14 @@ LabKit is a MATLAB workbench of focused laboratory Apps. Choose the result you n
 | Install or update LabKit, open the Launcher, or choose an App | [Use LabKit](use/README.md) |
 | Build or extend an App, change source, test, document, package, or release | [Develop LabKit](develop/README.md) |
 | Look up MATLAB syntax, fields, defaults, errors, or schemas | [Reference](reference/README.md) |
-| Understand why an accepted behavior changed | [Changes](changes/README.md) |
+| Find out why an App or MATLAB function changed | [Changes](changes/README.md) |
 
 ## How The Documentation Fits Together
 
-Current App guides and developer manuals describe behavior supported now. API and schema reference pages define exact callable or file contracts. Change records explain why one accepted change happened and link back to current documentation. [GitHub Releases](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases) summarize published versions and any upgrade action.
+Read an App guide for instructions, or open a function reference for its arguments, defaults, and return values. To see what changed in a particular version, check [GitHub Releases](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases).
 
-You do not need to read these layers in order. Start with the page that matches your goal, use search when you know a term or MATLAB symbol, and use the generated [documentation map](map/index.html) when you want to see the whole structure.
+Search by App or function name, or browse the [documentation map](map/index.html).
 
 ## Need Help?
 
-Use the current App guide to confirm supported inputs, workflow, recovery, and limitations. If observed behavior still differs, follow [Support](../.github/SUPPORT.md) to report the App, reproducible steps, expected and actual behavior, and redacted evidence.
+If an App behaves differently from its guide, tell us which App you used, what you did, what you expected, and what happened. See [Support](../.github/SUPPORT.md) for the logs to include and the details to remove before sharing.

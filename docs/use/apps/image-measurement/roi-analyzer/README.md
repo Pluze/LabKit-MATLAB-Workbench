@@ -11,7 +11,7 @@ ROI Analyzer measures and compares original pixel values inside reusable regions
 
 Scroll over the image to inspect ROI boundaries at higher magnification. Right-click the image for plot actions, including opening the current view in a separate figure.
 
-The left pane groups the workflow under **Images & ROIs**, **Layout tools**, **Measurements**, **Project**. Use **Measure all images** in the header when ready.
+Place the ROIs in **Images & ROIs**. To shift them together, open **Layout tools**. Check the current image in **Measurements**, or choose **Measure all images** to process the batch. Save reusable work in **Project**.
 
 ## Requirements And Launch
 
@@ -43,7 +43,7 @@ Each ROI has three separate kinds of state:
 
 Dragging inside an ROI changes only its placement. The center handle remains usable even when the ROI is only a few pixels wide. Dragging from empty image space draws a selection box and highlights every enclosed ROI; dragging any highlighted ROI then moves the selected group together. Editing **Shared shape**, **Shared width**, or **Shared height** resizes or reshapes the ROI set without moving centers. Square and circle geometry keeps equal width and height.
 
-The **Images + ROIs** page owns normal image-by-image measurement: source navigation, selection, copy/paste, shared shape and size, placement, and quantification. The **Layout Tools** page contains only explicit whole-image or all-image placement transforms.
+Use **Images & ROIs** to select an image, copy or paste ROIs, and adjust their shared geometry or individual placements. Use **Layout tools** to shift or replace placements across images. In **Measurements**, choose the ratio denominator, run **Measure ROIs**, inspect the results, and export the current or batch CSV.
 
 There is one copy-and-paste workflow. Select one or more ROIs, press **Copy selected**, remain on the current image or navigate to another image, and press **Paste**. On the same image the App requests a 10-pixel right-and-down shift, reduced only as needed to keep the complete group inside the image. On another image the App preserves the source coordinates when the complete group fits; otherwise it centers the group while preserving every relative position. If the group cannot fit without changing its geometry or relative layout, the App reports the problem and does not paste a partial group. Pasted ROIs remain selected for immediate group dragging. Existing destination names are never reused: the App adds **copy**, **copy 2**, and later numeric suffixes as needed.
 

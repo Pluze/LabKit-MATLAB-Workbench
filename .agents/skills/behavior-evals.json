@@ -250,6 +250,21 @@
         "Calling RMS contrast noise-subtracted SNR",
         "Selecting windows solely to maximize apparent separation"
       ]
+    },
+    {
+      "id": "panel-workflow-redesign",
+      "prompt": "Redesign the panels in this single-file analysis App. The numeric field crowds the slider, and the status becomes hard to read after a failed import.",
+      "skills": [
+        "labkit-app-builder",
+        "labkit-test-planner"
+      ],
+      "expected": [
+        "Traces import, adjustment and recovery through the affected panels and uses a source control suited to one file",
+        "Checks the narrow layout with wrapped status and identifies which operations were exercised in MATLAB"
+      ],
+      "forbidden": [
+        "Treating a successful launch or an HTML mockup as proof of native keyboard, pointer and touch usability"
+      ]
     }
   ]
 }

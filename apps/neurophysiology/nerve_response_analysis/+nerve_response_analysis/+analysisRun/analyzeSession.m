@@ -127,13 +127,6 @@ function accepted = acceptedRows(recordings)
     end
 end
 
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end
-
 function recordings = recordingsTable(session)
     if isfield(session, "recordings") && istable(session.recordings)
         recordings = session.recordings;

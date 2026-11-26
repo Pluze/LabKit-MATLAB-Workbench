@@ -9,9 +9,7 @@ summary: Record NI-DMM voltage, current, two-wire or four-wire resistance, and d
 
 NI-DMM Recorder is a public LabKit App for NI digital multimeters including the USB-4065. It records the complete in-memory run, plots a bounded recent view, and exports data suitable for host-clock alignment with Mark-10 Monitor.
 
-Choose **Live Plot**, **Recent Data** beside the App title to switch views. Use **Export CSV + MAT** in the header when ready.
-
-The left pane groups the workflow under **Connect & configure**, **Acquire & save**, **Device diagnostics**.
+Choose the meter and measurement in **Connect & configure**. Start recording in **Acquire & save**. Use **Live Plot** to see the trend or **Recent Data** to read individual samples. Choose **Export CSV + MAT** to save the recording. If the meter is unavailable, open **Device diagnostics**.
 
 ## Prepare And Connect
 

@@ -27,6 +27,16 @@ only capabilities with a named product or lifecycle owner.
 Apply the callback commit, logging, and viewport rules in `apps/AGENTS.md`.
 Record only the decisions the new App needs; do not restate SDK defaults.
 
+For a panel redesign, walk through each requested operation from the user's
+starting state to its visible result. Include empty, loaded, busy and recovery
+states where they exist. Check the actual input shape: a single file may
+need only a compact source row, while a batch may need a list. Try the narrow
+layout with wrapped status text and check the space around sliders, numeric
+fields and adjacent buttons. Identify which actions need keyboard, pointer or
+touch checks. An HTML prototype can settle layout choices; verify the resulting
+controls in MATLAB. Report which panels and operations were exercised and
+which still need hands-on inspection.
+
 Make layout read in workflow order. Keep each capability's layout, direct
 actions, presentation, and renderer together when they change together. Use
 SDK bindings and defaults before callback glue; pass narrow domain values below

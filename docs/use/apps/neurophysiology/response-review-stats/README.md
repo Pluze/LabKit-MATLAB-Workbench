@@ -9,13 +9,11 @@ summary: Review nerve-response results or segment tables, adjust measurement win
 
 Response Review and Stats opens a Nerve Response Analysis result or a segment table, displays the measurements, and exports a clean CSV for review or downstream statistics. Segment tables can also be aligned and measured again with new baseline and noise windows.
 
-Loading or recalculating a source produces the presentation data consumed by the review pages directly, without a second source-file presenter state.
-
-The left pane groups the workflow under **Load & compare**, **Review & export**.
+Load the responses in **Load & compare**. Once you have checked the alignment, use **Review & export** to inspect and save the measurements.
 
 ## Open Response Review And Stats
 
-From the launcher, select **Response Review Stats** and choose **Open**. From a source checkout, run:
+From the launcher, select **Response Review Stats** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_ResponseReviewStats_app

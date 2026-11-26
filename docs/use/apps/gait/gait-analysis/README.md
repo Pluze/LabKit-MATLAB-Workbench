@@ -7,13 +7,13 @@ audience: app-user
 summary: Convert a Video Marker project into segmented treadmill swing steps, kinematics, gait parameters, visual reports, and reproducible CSV outputs.
 ```
 
-Gait Analysis converts a current Video Marker project into independently segmented treadmill swing steps, per-frame kinematics, per-step gait parameters, visual step reports, and reproducible CSV outputs. Loading and analysis are deliberately separate: loading first shows the complete tracked skeleton trajectory; analysis then enables one-step-at-a-time review.
+Gait Analysis converts a current Video Marker project into independently segmented treadmill swing steps, per-frame kinematics, per-step gait parameters, visual step reports, and reproducible CSV outputs. Loading and analysis are deliberately separate: loading first shows the complete tracked skeleton trajectory in **Gait Preview**; analysis then enables one-step-at-a-time review.
 
-The left pane groups the workflow under **Load & analyze**, **Detection**, **Review & export**.
+Open the Video Marker recording in **Load & analyze**. Use **Detection** to adjust how steps are found. Inspect individual steps and save their measurements in **Review & export**.
 
 ## Open Gait Analysis
 
-From the LabKit launcher, select **Gait Analysis** and choose **Open**. From a source checkout, run:
+From the LabKit launcher, select **Gait Analysis** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_GaitAnalysis_app
@@ -137,4 +137,4 @@ writetable(result.stepTable, "steps.csv");
 - The default detector reflects lateral treadmill motion and assumes the foot travels toward increasing X before returning toward decreasing X.
 - Smoothing and prominence affect event boundaries and must be reported with scientific results.
 - Tracking confidence and manual/predicted frame status are preserved from Video Marker but are not yet automatic step-exclusion rules.
-- Group statistics and between-animal inference are outside this single- recording app; exported step tables are the boundary for that workflow.
+- For comparisons across recordings or animals, export the step tables and analyze them together outside the App.

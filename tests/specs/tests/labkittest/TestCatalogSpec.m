@@ -250,7 +250,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "classdef ProbeSpec < matlab.unittest.TestCase", ...
                 "    methods (Test, TestTags = {'Contract:system', 'Env:headless'})", ...
                 "        function proof(testCase)", ...
-                "            testCase.verifyTrue(false, 'actionable diagnostic marker')", ...
+                "            testCase.assertTrue(false, 'actionable diagnostic marker')", ...
                 "        end", ...
                 "    end", ...
                 "end"]);
@@ -265,6 +265,8 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
             junit = string(fileread(fullfile( ...
                 fixture.Folder, "failed-probe", "junit.xml")));
+            % A fatal assertion ends one test. JUnit must count one failure.
+            testCase.verifySubstring(junit, 'failures="1" errors="0"');
             testCase.verifySubstring(junit, "actionable diagnostic marker");
             testCase.verifyFalse(contains(junit, ...
                 '<failure message="Test failed"/>'));
@@ -349,6 +351,15 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(result.Results{2}), 1);
             testCase.verifyEqual(numel(plan.reasons), 4);
             testCase.verifyEqual(numel(plan.tests), 4);
+            % Three headless tests followed by one GUI test form a single run.
+            folder = result.Artifacts.Folder;
+            lines = readlines(fullfile(folder, "events.jsonl"));
+            events = arrayfun(@jsondecode, lines(lines ~= ""));
+            done = events(string({events.event}) == "test_done");
+            testCase.verifyEqual([done.completed], 1:4);
+            testCase.verifyEqual([done.total], [4 4 4 4]);
+            active = jsondecode(fileread(fullfile(folder, "active-test.json")));
+            testCase.verifyEqual([active.completed active.total], [4 4]);
         end
 
         function locateGivesAuthorsTheExactCapabilityInsertionFolders(testCase)

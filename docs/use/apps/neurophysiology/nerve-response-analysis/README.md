@@ -9,13 +9,11 @@ summary: Detect stimulation trains and measure compound action potential respons
 
 Nerve Response Analysis reads the recording list prepared in RHS Preview, finds stimulation events, groups them into trains, and measures compound action potential responses in the assigned channels.
 
-Differential metrics are produced by the analysis run that owns the selected recording and protocol, so later review and export consume one result schema.
-
-The left pane groups the workflow under **Load & analyze**, **Protocol**, **Review & export**.
+Load the recording list from RHS Preview in **Load & analyze** and check the channel assignments in **Protocol**. After running the analysis, inspect the responses and save the measurements in **Review & export**.
 
 ## Open Nerve Response Analysis
 
-From the launcher, select **Nerve Response Analysis** and choose **Open**. From a source checkout, run:
+From the launcher, select **Nerve Response Analysis** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_NerveResponseAnalysis_app

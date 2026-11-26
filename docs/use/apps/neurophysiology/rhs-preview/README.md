@@ -9,13 +9,11 @@ summary: Inspect channels and short waveform windows in an Intan RHS recording a
 
 RHS Preview lets you inspect an Intan RHS recording without loading the entire waveform into memory. Use it to check channels, move through short waveform windows, choose the channels to plot, and prepare protocol or file-filter JSON for later analysis.
 
-The displayed file is decoded and presented by the source workflow that owns the current window, preventing a separate display-file path from drifting from the selected recording.
-
-The left pane groups the workflow under **Preview setup**, **Protocol**, **Filter**, **Review**.
+Choose an RHS recording and time window in **Preview setup**. Use **Protocol** to assign channels and **Filter** to choose which recordings to include in later analysis. Check the recording and selected channels in **Review**.
 
 ## Open RHS Preview
 
-From the LabKit launcher, select **RHS Preview** and choose **Open**. From a source checkout, run:
+From the LabKit launcher, select **RHS Preview** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_RHSPreview_app

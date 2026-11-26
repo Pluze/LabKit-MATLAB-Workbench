@@ -9,9 +9,9 @@ summary: Batch Image Crop defines one crop task per image, previews rotation and
 
 Batch Image Crop defines one crop task per image, previews rotation and edge-continuous padding, and exports repeatable same-size crops in pixel or physical-scale mode.
 
-Crop edits preserve the active preview viewport through the managed image interaction; the App does not keep a second private viewport snapshot.
+You can adjust the crop while zoomed in. The preview keeps its current zoom and position.
 
-The left pane groups the workflow under **Images & crop**, **Calibration**, **Results & export**.
+Choose your images and set the crop in **Images & crop**. Use **Calibration** when you need a physical scale. Check the output in **Results & export**.
 
 ## Requirements And Launch
 

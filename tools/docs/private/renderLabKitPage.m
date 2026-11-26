@@ -221,7 +221,7 @@ function html = renderSiblingApis(api, item, outputPath)
     members(string({members.symbol}) == symbol) = [];
     links = strings(numel(members), 1);
     for k = 1:numel(members)
-        target = apiOutputPath(members(k));
+        target = apiOutputPath(members(k).symbol);
         nameParts = split(string(members(k).symbol), ".");
         links(k, 1) = localLink(outputPath, target, nameParts(end));
     end
@@ -422,10 +422,7 @@ function [title, target, item] = apiOwner(model, outputPath)
     title = "";
     target = "";
     item = [];
-    paths = strings(numel(model.api), 1);
-    for k = 1:numel(model.api)
-        paths(k) = apiOutputPath(model.api(k));
-    end
+    paths = apiOutputPath({model.api.symbol});
     apiIndex = find(paths == outputPath, 1);
     if isempty(apiIndex)
         return;
@@ -465,11 +462,6 @@ function [title, target, item] = apiOwner(model, outputPath)
         title = string(pages(pageIndex).title);
         target = string(pages(pageIndex).output);
     end
-end
-
-function path = apiOutputPath(item)
-    path = "reference/api/" + replace(string(item.symbol), ".", "/") + ...
-        ".html";
 end
 
 function html = localLink(current, target, label)

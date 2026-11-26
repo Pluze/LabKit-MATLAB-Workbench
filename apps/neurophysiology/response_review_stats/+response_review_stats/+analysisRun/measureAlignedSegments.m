@@ -128,10 +128,3 @@ function metrics = measureAlignedSegments(aligned, opts)
         PeakToPeak, Peak1Time_s, Peak1Value, Peak2Time_s, Peak2Value, ...
         NoiseStart_s, NoiseEnd_s, NoiseRMS, SNR_dB);
 end
-
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end

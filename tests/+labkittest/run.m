@@ -22,19 +22,19 @@ function result = run(varargin)
     reportPlanScope(compiledPlan);
     reportManualChecks(compiledPlan.ManualChecks);
     results = cell(1, numel(compiledPlan.Groups));
+    progress = labkittest.ProgressPlugin(artifacts.Folder, RunTotal=numel(compiledPlan.Descriptors));
+    cleanup = onCleanup(@() delete(progress));
     for k = 1:numel(compiledPlan.Groups)
         group = compiledPlan.Groups(k);
         suite = [group.Descriptors.Test];
         runner = matlab.unittest.TestRunner.withTextOutput("OutputDetail", "terse");
-        progress = labkittest.ProgressPlugin(artifacts.Folder);
-        cleanup = onCleanup(@() delete(progress));
         runner.addPlugin(matlab.unittest.plugins.DiagnosticsRecordingPlugin);
         runner.addPlugin(progress);
         environmentCleanup = applyEnvironment(group.Environment);
         results{k} = runner.run(suite);
         delete(environmentCleanup);
-        delete(cleanup);
     end
+    delete(cleanup);
     failed = cellfun(@hasFailures, results);
     writeJUnit(fullfile(artifacts.Folder, "junit.xml"), results);
     writeJson(fullfile(artifacts.Folder, "summary.json"), ...
@@ -245,7 +245,7 @@ function writeJUnit(file, results)
         incomplete = logical(result.Incomplete);
         fprintf(fid, ['  <testsuite name="%s" tests="1" failures="%d" ' ...
             'errors="%d" time="%.9g">\n'], xmlText(className), failed, ...
-            incomplete, resultSeconds(result.Duration));
+            incomplete && ~failed, resultSeconds(result.Duration));
         fprintf(fid, '    <testcase classname="%s" name="%s" time="%.9g"', ...
             xmlText(className), xmlText(methodName), resultSeconds(result.Duration));
         if ~failed && ~incomplete

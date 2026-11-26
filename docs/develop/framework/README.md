@@ -9,7 +9,7 @@ summary: Understand the labkit.app lifecycle, layout, transactions, execution, s
 
 `labkit.app` is the MATLAB App SDK above LabKit's GUI-free domain libraries. Apps own scientific workflow, calculations, units, wording, plots, and exports. The SDK owns semantic layout, transactions, execution queues, lifecycle, runtime source lists, diagnostics, dialogs, resources, and native components.
 
-The native workbench uses a single light appearance, a product header, a data sidebar and workspace view buttons that collapse into a selector when space is limited. An optional `HeaderAction` on `layout.workbench` places an existing semantic button in the header and routes it through the usual App transaction. Workspace pages can declare `Heading` and `Note` for a page heading and a short footer. A `statusPanel` can use `Presentation="label"` for a short summary or `Presentation="note"` for explanatory text. Multi-file lists provide Select all, removal and clearing alongside the standard source import actions.
+The native workbench uses a single light appearance, a product header, a data sidebar and workspace view buttons that collapse into a selector for more than three views or when space is limited. An optional `HeaderAction` on `layout.workbench` places an existing semantic button in the header and routes it through the usual App transaction. Workspace pages can declare `Heading` and `Note` for a page heading and a short footer. A `statusPanel` can use `Presentation="label"` for a short summary or `Presentation="note"` for explanatory text. Multi-file lists provide Select all, removal and clearing alongside the standard source import actions.
 
 ## Start Here
 

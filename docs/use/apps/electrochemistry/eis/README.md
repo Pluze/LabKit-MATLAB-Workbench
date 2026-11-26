@@ -9,11 +9,7 @@ summary: EIS overlays impedance data from one or more Gamry ZCURVE tables, suppo
 
 EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports Nyquist and Bode-style axis combinations, and exports the values currently selected for plotting.
 
-Source summaries are derived from the currently parsed EIS recording, so file selection, plots, and exported values refer to the same loaded result.
-
-Choose **Nyquist + Bode**, **Custom plot**, **Groups** beside the App title to switch views. Use **Export custom CSV** in the header when ready.
-
-The left pane groups the workflow under **Source scans**, **Plot appearance**.
+Add DTA files in **Source scans**. Start with **Nyquist + Bode** to inspect impedance across frequencies. Use **Groups** to compare repeated scans or **Custom plot** to choose the quantities for **Export custom CSV**. Change units and styling in **Plot appearance**.
 
 ## Requirements And Launch
 
@@ -51,11 +47,11 @@ The recommendation is a display heuristic, not an electrochemical identification
 
 ## Manual Groups For Repeated Scans
 
-Open the **Groups** page to manage repeated scans. Enter the new group name in the creation row. Use the separate assignment row to choose a group for the selected files. **Enable group mean ± SD** starts off. When enabled, the App asks whether to **Auto-group files** or **Group manually**; **Cancel** leaves grouping disabled. The Files list remains on the left while the group manager shows controls, group scan counts, and every imported file's assignment on the right.
+Open the **Groups** page to manage repeated scans. Enter the new group name in the creation row. Use the separate assignment row to choose a group for the selected files. **Enable group mean ± SD** starts off. When enabled, the App asks whether to **Auto-group files** or **Group manually**; **Cancel** leaves grouping disabled. The **Source scans** page on the left contains the file list while the group manager shows controls, group scan counts, and every imported file's assignment on the right.
 
 Automatic recognition removes only the final `-digits` suffix from the filename stem: `Sample-A-1.DTA`, `Sample-A-2.DTA`, and `Sample-A-3.DTA` become **Sample-A**. Prefixes must match exactly, including case. Earlier hyphens remain part of the sample name, and files without a final numeric suffix remain unassigned. A single matching scan may form a group with no SD. Automatic names are suggestions: check that the files actually represent the same sample and conditions. Incompatible frequency groups are skipped with a message and remain available for manual review.
 
-For manual setup, enter **New group name** and click **Add group**. Choose the **Target group**, select one or several files in the left Files list, and click **Assign selected files**. Files move into that group, so each scan has at most one membership. **Unassign selected files** releases scans without deleting them. **Delete group** removes the target group and releases all its members, while keeping every imported file. Empty groups stay available until explicitly deleted. For three sample types with three scans each, create three groups and assign each three-file selection, or accept automatic recognition and review the three counts.
+For manual setup, enter a name in **Name** and click **Add group**. Choose the target in **Group**, select one or several files in the left Files list, and click **Assign selected files**. Files move into that group, so each scan has at most one membership. **Unassign selected** releases scans without deleting them. **Delete group** removes the target group and releases all its members, while keeping every imported file. Empty groups stay available until explicitly deleted. For three sample types with three scans each, create three groups and assign each three-file selection, or accept automatic recognition and review the three counts.
 
 **Auto-group unassigned** recognizes newly imported or unassigned files without moving any existing members. Re-enabling grouping offers the same choice and preserves manual assignments. Turning grouping off restores raw file overlays; groups remain available for the current session. Removing an imported file also removes its membership. In group mode both plot pages show assigned, nonempty groups only; unassigned files are counted in the panel and excluded from statistics.
 
@@ -87,7 +83,7 @@ The custom plot never infers an equal aspect ratio from the selected quantities:
 
 ## Output
 
-With grouping disabled, **Export custom plot CSV** writes the selected X/Y values for each selected valid file on a shared row index. Each file retains its own X and Y pair, so unequal curve lengths do not imply interpolation. Impedance columns use the selected display unit and include an ASCII unit suffix such as `kohm` in the column name. Column names are sanitized and shortened to MATLAB's supported length; collisions receive numeric suffixes in source order so every curve retains its own columns.
+With grouping disabled, **Export custom CSV** writes the selected X/Y values for each selected valid file on a shared row index. Each file retains its own X and Y pair, so unequal curve lengths do not imply interpolation. Impedance columns use the selected display unit and include an ASCII unit suffix such as `kohm` in the column name. Column names are sanitized and shortened to MATLAB's supported length; collisions receive numeric suffixes in source order so every curve retains its own columns.
 
 With grouping enabled, the same export action writes all assigned groups, independent of the current file selection. Each row contains `Group`, `Frequency_Hz`, paired valid count `N`, `XQuantity`, `XMean`, `XSD`, `YQuantity`, `YMean`, `YSD`, and `Visible`. Quantity labels specify the selected axes and impedance units. Invalid and log-hidden rows remain in the CSV with their counts and `Visible=false`, so absence from a plot does not conceal missing data. SD is always sample SD and remains in the corresponding coordinate's units.
 
