@@ -568,12 +568,16 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             elseif ~isempty(linked) && source == linked
                 component.Value = value;
                 data = component.UserData;
-                if data.LiveUpdate && (isempty(data.LastDragUpdate) || toc(data.LastDragUpdate) >= 0.08)
-                    data.LastDragUpdate = tic;
-                    component.UserData = data;
+                if data.LiveUpdate && isempty(obj.ActiveDragSlider) && ...
+                        (isempty(data.LastDragUpdate) || toc(data.LastDragUpdate) >= 0.08)
                     obj.ActiveDragSlider = linked;
                     cleanup = onCleanup(@() obj.endDragPreview());
                     obj.runUserInput(@() obj.pannerChanged(target,value));
+                    % Leave time for pointer movement after a slow redraw.
+                    % Mouse-up still commits the final position immediately.
+                    if isvalid(component)
+                        component.UserData.LastDragUpdate = tic;
+                    end
                     clear cleanup
                 end
             end
